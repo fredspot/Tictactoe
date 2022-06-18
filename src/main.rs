@@ -1,36 +1,10 @@
 mod game;
 
+use game::{print_board, Game, Move};
 use std::io;
-use game::{Game, Tile};
+use std::str::FromStr;
 
-const RADIX: u32 = 10;
-
-fn print_board(game: &Game) {
-    
-    println!("\n   {}", (0..game.board.len()).into_iter().map(|x| x.to_string()).collect::<Vec<String>>().join("--"));
-    for (i, row) in game.board.iter().enumerate() {
-        let mut to_display = match i {
-            0 => String::from("A "),
-            1 => String::from("B "),
-            2 => String::from("C "),
-            3 => String::from("D "),
-            4 => String::from("E "),
-            5 => String::from("F "),
-            _ => String::from("  "),
-        };
-        for cell in row.iter() {
-            let to_push = match cell {
-                Some(Tile::O) => " O ",
-                Some(Tile::X) => " X ",
-                None => " ~ "
-            };
-            to_display += to_push;
-        }
-        println!("{}", to_display);
-    }
-}
-
-fn main() {
+fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Create a game.
     let mut game = Game::new();
 
@@ -48,50 +22,19 @@ fn main() {
         let mut next_move = String::new();
         io::stdin()
             .read_line(&mut next_move)
-            .expect("This isn't a valid move.");
+            .expect("This isn't a valid input.");
 
-        // Get the row and column for the next move.
-        let mut next_move_vec: Vec<char> = next_move.trim().chars().collect();
-
-        if next_move_vec.is_empty() {
-            println!("Not a valid move");
-            continue
-        } if next_move_vec.len() != 2 {
-            println!("Not a valid move");
-            continue 
-        }
-
-        // Look at the first element, rev if first is letter.
-        if next_move_vec[0].is_ascii_alphabetic() {
-            next_move_vec.reverse();
-        }
-
-        // Change the row to a usize.
-        let row: usize = match next_move_vec[1] {
-            'a' | 'A' => 0,
-            'b' | 'B' => 1,
-            'c' | 'C' => 2,
-            'd' | 'D' => 3,
-            'e' | 'E' => 4,
-            'f' | 'F' => 5,
-            _ => {
-                println!("Not a valid row");
-                continue
-            },
+        // Create the next move.
+        let next_move = match Move::from_str(next_move.trim()) {
+            Ok(x) => x,
+            Err(x) => {print!("{}", x);
+                                  continue}
         };
-        let col: usize = next_move_vec[0]
-            .to_digit(RADIX)
-            .unwrap() as usize;
-
-        if col > game.board.len() - 1 {
-            println!("Not a valid col");
-            continue
-        }
 
         // Play the move.
-        match game.play(row, col) {
-            Err(x) => println!("{}", x),
+        match game.play(next_move){
             Ok(_) => (),
+            Err(x) => print!("{}", x)
         };
     }
 
@@ -100,5 +43,7 @@ fn main() {
 
     // Know this is some because the loop ended.
     println!("The game is over : {}", game.winner.unwrap());
+
+    Ok(())
 
 }
